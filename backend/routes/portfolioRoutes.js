@@ -4,12 +4,16 @@ const {
   createPortfolio, 
   getPortfolioByUsername, 
   updatePortfolio,
-  deletePortfolio 
+  deletePortfolio,
+  getMyPortfolio 
 } = require('../controllers/portfolioController');
 const { protect } = require('../middleware/authMiddleware');
 
 // POST /api/portfolio - Create a new portfolio (Protected)
 router.post('/', protect, createPortfolio);
+
+// GET /api/portfolio/me - Get current user's portfolio (Protected)
+router.get('/me', protect, getMyPortfolio);
 
 // GET /api/portfolio/:username - Fetch a portfolio by username (Public)
 router.get('/:username', getPortfolioByUsername);

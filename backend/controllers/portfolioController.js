@@ -3,17 +3,10 @@ const UserPortfolio = require('../models/UserPortfolio');
 // Create a new portfolio
 const createPortfolio = async (req, res) => {
   try {
-    // Extract data from the request body
     const { username, fullName, title, bio, contact, skills, projects, experience } = req.body;
 
-    // Check if a portfolio with this username already exists
-    const existingPortfolio = await UserPortfolio.findOne({ username });
-    if (existingPortfolio) {
-      return res.status(400).json({ message: 'Username is already taken. Please choose another one.' });
-    }
-
-    // Create a new portfolio document
     const newPortfolio = new UserPortfolio({
+      user: req.user._id, // Now req.user will have the _id from the Database
       username,
       fullName,
       title,
@@ -24,15 +17,11 @@ const createPortfolio = async (req, res) => {
       experience
     });
 
-    // Save to MongoDB
     const savedPortfolio = await newPortfolio.save();
-    
-    // Send success response
     res.status(201).json(savedPortfolio);
-
   } catch (error) {
     console.error("Error creating portfolio:", error);
-    res.status(500).json({ message: 'Server Error. Could not create portfolio.', error: error.message });
+    res.status(500).json({ message: 'Server Error', error: error.message });
   }
 };
 // Fetch a portfolio by username
@@ -101,9 +90,26 @@ const deletePortfolio = async (req, res) => {
     res.status(500).json({ message: 'Server Error. Could not delete portfolio.', error: error.message });
   }
 };
+
+// Get all portfolios for the currently logged-in user
+const getMyPortfolio = async (req, res) => {
+  try {
+    const portfolios = await UserPortfolio.find({ user: req.user._id });
+    
+    if (portfolios && portfolios.length > 0) {
+      res.status(200).json(portfolios);
+    } else {
+      res.status(404).json({ message: 'No portfolios found for this user.' });
+    }
+  } catch (error) {
+    console.error("Error fetching user portfolios:", error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+};
 module.exports = {
   createPortfolio,
   getPortfolioByUsername,
   updatePortfolio,
-  deletePortfolio
+  deletePortfolio,
+  getMyPortfolio
 };
