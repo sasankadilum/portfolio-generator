@@ -1,16 +1,33 @@
-# React + Vite
+# Developer Portfolio Generator (PortGen) 🚀
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A full-stack MERN application that allows developers to generate and host their professional portfolios dynamically.
 
-Currently, two official plugins are available:
+## ✨ Features
+- [cite_start]**JWT Authentication**: Secure user login and management[cite: 80].
+- [cite_start]**Dynamic Form**: Multi-section form for personal info, skills, projects, and experience[cite: 21, 26].
+- [cite_start]**Public Profiles**: Unique shareable URLs for each developer (`/portfolio/:username`)[cite: 34].
+- [cite_start]**Dark/Light Mode**: Full theme toggle support using Tailwind CSS[cite: 80].
+- [cite_start]**Security**: IDOR protection and URL-safe username validation[cite: 46, 66].
+- [cite_start]**Responsive Design**: Fully optimized for mobile and desktop.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🛠️ Tech Stack
+- [cite_start]**Frontend**: React.js, Tailwind CSS, Axios, React Router[cite: 12].
+- [cite_start]**Backend**: Node.js, Express.js[cite: 12].
+- [cite_start]**Database**: MongoDB with Mongoose[cite: 12].
 
-## React Compiler
+## ⚙️ Environment Variables
+Create a `.env` file in the `backend` folder and add:
+- `MONGO_URI`= your_mongodb_connection_string
+- `JWT_SECRET`= your_secret_key
+- `PORT`= 5000
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 🚀 Setup Instructions
+1. **Clone the repo**: `git clone <repo_url>`
+2. **Backend Setup**:
+   - `cd backend`
+   - `npm install`
+   - `npm start`
+3. **Frontend Setup**:
+   - `cd frontend`
+   - `npm install`
+   - `npm run dev`

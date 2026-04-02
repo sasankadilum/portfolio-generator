@@ -70,7 +70,7 @@ export default function PublicPortfolio() {
   return (
     <div className="bg-white dark:bg-gray-950 min-h-screen transition-colors duration-300">
 
-      {isLoggedIn && (
+      {/* {isLoggedIn && (
         <div className="bg-slate-800 dark:bg-gray-900 px-6 py-2.5 flex justify-end border-b border-slate-700 print:hidden">
           <Link
             to={`/edit/${username}`}
@@ -79,7 +79,7 @@ export default function PublicPortfolio() {
             ✏️ Edit My Portfolio
           </Link>
         </div>
-      )}
+      )} */}
 
       <nav className="sticky top-0 z-40 bg-white/95 dark:bg-gray-900/95 backdrop-blur border-b border-slate-100 dark:border-gray-800 shadow-sm print:hidden">
         <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-center gap-4 sm:gap-10 overflow-x-auto">
