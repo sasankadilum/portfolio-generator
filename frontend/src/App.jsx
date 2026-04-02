@@ -1,5 +1,6 @@
 // App.jsx — Root component. Wraps the app in a Router and applies
 // the global dark-mode class to <html> so Tailwind's `dark:` variants work.
+import { Toaster } from 'react-hot-toast';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { useEffect } from 'react';
 import Home from './pages/Home';
@@ -24,6 +25,7 @@ function App() {
     <Router>
       {/* Base layer: adapts between light and dark backgrounds */}
     <div className="min-h-screen w-full flex flex-col bg-slate-50 dark:bg-gray-950 transition-colors duration-300 m-0 p-0 overflow-x-hidden">
+      <Toaster position="top-center" reverseOrder={false} />
         <Navbar />
         <Routes>
           <Route path="/"                    element={<Home />} />
@@ -32,6 +34,7 @@ function App() {
           <Route path="/edit/:username"      element={<EditPortfolio />} />
           <Route path="/portfolio/:username" element={<PublicPortfolio />} />
         </Routes>
+       
       </div>
     </Router>
   );

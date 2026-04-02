@@ -1,4 +1,5 @@
 // EditPortfolio.jsx
+import toast from 'react-hot-toast';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -141,12 +142,12 @@ export default function EditPortfolio() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      alert('Portfolio updated successfully!');
+      toast.success('Portfolio updated successfully! ✨');
       window.open(`/portfolio/${formData.username}`, '_blank');
       navigate('/dashboard');
     } catch (error) {
       console.error('Error updating portfolio:', error);
-      alert(error.response?.data?.message || 'Failed to update portfolio.');
+      toast.error(error.response?.data?.message || 'Failed to update portfolio.');
     }
   };
 
@@ -159,11 +160,11 @@ export default function EditPortfolio() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      alert('Portfolio deleted successfully!');
+      toast.success('Portfolio deleted successfully! 🗑️');
       navigate('/');
     } catch (error) {
       console.error('Error deleting portfolio:', error);
-      alert(error.response?.data?.message || 'Failed to delete portfolio.');
+      toast.error(error.response?.data?.message || 'Failed to delete portfolio.');
     }
   };
 

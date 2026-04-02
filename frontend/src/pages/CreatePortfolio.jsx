@@ -1,4 +1,5 @@
 // CreatePortfolio.jsx
+import toast from 'react-hot-toast';
 import { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -143,7 +144,7 @@ export default function CreatePortfolio() {
 
       const token = localStorage.getItem('token');
       if (!token) {
-        alert('Please login first to save your portfolio!');
+        toast.error('Please login first to save your portfolio!');
         return;
       }
 
@@ -153,12 +154,14 @@ export default function CreatePortfolio() {
 
       const savedPortfolioData = res.data; 
 
-      alert('Portfolio Published Successfully!');
+      toast.success('Portfolio Published Successfully! 🚀');
       window.open(`/portfolio/${savedPortfolioData.username}`, '_blank');
-      navigate('/dashboard');
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 1500);
     } catch (error) {
       console.error('Error saving portfolio:', error);
-      alert(error.response?.data?.message || 'An error occurred while publishing.');
+      toast.error(error.response?.data?.message || 'An error occurred while publishing.');
     }
   };
 
@@ -330,9 +333,15 @@ export default function CreatePortfolio() {
         <div className="bg-white dark:bg-slate-900 border-2 border-dashed border-blue-400 dark:border-blue-600 rounded-3xl p-8 sm:p-12 shadow-lg space-y-8">
           
           <div className="flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left">
-            {formData.profileImage && (
-              <img src={formData.profileImage} alt="Profile" className="w-24 h-24 rounded-full object-cover border-4 border-blue-100 dark:border-gray-800 shadow-md" onError={(e) => { e.target.style.display = 'none' }} />
-            )}
+            <img 
+              src={formData.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.fullName)}&background=0D8ABC&color=fff&size=128`} 
+              alt="Profile" 
+              className="w-24 h-24 rounded-full object-cover border-4 border-blue-100 dark:border-gray-800 shadow-md" 
+              onError={(e) => { 
+                e.target.onerror = null; 
+                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.fullName)}&background=0D8ABC&color=fff&size=128`; 
+              }} 
+            />
             <div>
               <h3 className="text-3xl font-extrabold text-slate-800 dark:text-white">
                 {formData.fullName} <span className="text-lg font-normal text-slate-400">(@{formData.username})</span>

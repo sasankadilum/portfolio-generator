@@ -102,11 +102,14 @@ export default function PublicPortfolio() {
           {portfolio.profileImage && (
             <div className="mb-8">
               <img 
-                src={portfolio.profileImage} 
-                alt={portfolio.fullName} 
-                className="w-32 h-32 md:w-40 md:h-40 rounded-full object-cover mx-auto border-4 border-blue-50 dark:border-gray-800 shadow-xl"
-                onError={(e) => { e.target.style.display = 'none'; }} 
-              />
+              src={portfolio.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(portfolio.fullName)}&background=0D8ABC&color=fff&size=128`} 
+              alt={portfolio.fullName} 
+              className="w-32 h-32 md:w-40 md:h-40 rounded-full object-cover mx-auto border-4 border-blue-50 dark:border-gray-800 shadow-xl"
+              onError={(e) => { 
+                e.target.onerror = null; 
+                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(portfolio.fullName)}&background=0D8ABC&color=fff&size=128`; 
+              }} 
+            />
             </div>
           )}
 
