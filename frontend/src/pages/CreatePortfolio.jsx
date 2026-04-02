@@ -10,21 +10,43 @@ export default function CreatePortfolio() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [errorMsg, setErrorMsg] = useState('');
-
+  const [usernameError, setUsernameError] = useState('');
+  
+  // ADDED: website in contact, and experience array
   const [formData, setFormData] = useState({
-    username: '', fullName: '', title: '', bio: '',
-    contact: { email: '', linkedin: '', github: '' },
-    skills: [], projects: [],
+    username: '', fullName: '', title: '', bio: '', profileImage: '', 
+    contact: { email: '', linkedin: '', github: '', website: '' },
+    skills: [], projects: [], experience: [],
   });
 
   const [skillInput, setSkillInput] = useState('');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (['email', 'linkedin', 'github'].includes(name)) {
+    // ADDED: 'website' to the contact fields array
+    if (['email', 'linkedin', 'github', 'website'].includes(name)) {
       setFormData({ ...formData, contact: { ...formData.contact, [name]: value } });
     } else {
       setFormData({ ...formData, [name]: value });
+    }
+  };
+
+  const handleUsernameCheck = async (e) => {
+    const username = e.target.value.trim();
+    if (!username) {
+      setUsernameError('');
+      return;
+    }
+
+    try {
+      const res = await axios.get(`http://localhost:5000/api/check-username/${username}`);
+      if (res.data.exists) {
+        setUsernameError('This username is already taken. Please try another one.');
+      } else {
+        setUsernameError('');
+      }
+    } catch (error) {
+      console.error('Error checking username:', error);
     }
   };
 
@@ -39,6 +61,26 @@ export default function CreatePortfolio() {
   const handleRemoveSkill = (i) =>
     setFormData({ ...formData, skills: formData.skills.filter((_, idx) => idx !== i) });
 
+  // ── Experience Handlers ───────────────────────────────────────────────────
+  const handleAddExperience = (e) => {
+    e.preventDefault();
+    setFormData({
+      ...formData,
+      experience: [...formData.experience, { company: '', role: '', duration: '', description: '' }],
+    });
+  };
+
+  const handleExperienceChange = (index, e) => {
+    const { name, value } = e.target;
+    const updated = [...formData.experience];
+    updated[index][name] = value;
+    setFormData({ ...formData, experience: updated });
+  };
+
+  const handleRemoveExperience = (i) =>
+    setFormData({ ...formData, experience: formData.experience.filter((_, idx) => idx !== i) });
+
+  // ── Project Handlers ──────────────────────────────────────────────────────
   const handleAddProject = (e) => {
     e.preventDefault();
     setFormData({
@@ -63,11 +105,33 @@ export default function CreatePortfolio() {
       setErrorMsg('Username and Full Name are required to continue.');
       return;
     }
+
+    const usernameRegex = /^[a-z0-9-]+$/;
+    if (!usernameRegex.test(formData.username)) {
+      setUsernameError('No spaces allowed! Use lowercase letters, numbers, and hyphens.');
+      setErrorMsg('Please fix the username error before continuing.');
+      return;
+    } else {
+      
+      setUsernameError('');
+    }
+
+    
+    if (usernameError && usernameError !== 'No spaces allowed! Use lowercase letters, numbers, and hyphens.') {
+      setErrorMsg('Please fix the username error before continuing.');
+      return;
+    }
+
     setErrorMsg('');
     setStep(2);
   };
 
   const handlePublish = async () => {
+    if (usernameError) {
+      setErrorMsg('Please fix the username error before publishing.');
+      return;
+    }
+
     try {
       const formattedData = {
         ...formData,
@@ -83,12 +147,14 @@ export default function CreatePortfolio() {
         return;
       }
 
-      await axios.post('http://localhost:5000/api/portfolio', formattedData, {
+      const res = await axios.post('http://localhost:5000/api/portfolio', formattedData, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
+      const savedPortfolioData = res.data; 
+
       alert('Portfolio Published Successfully!');
-      window.open(`/portfolio/${formData.username}`, '_blank');
+      window.open(`/portfolio/${savedPortfolioData.username}`, '_blank');
       navigate('/dashboard');
     } catch (error) {
       console.error('Error saving portfolio:', error);
@@ -98,7 +164,6 @@ export default function CreatePortfolio() {
 
   if (step === 1) {
     return (
-      /* 🔴 මෙතන max-w-5xl දාලා පළල වැඩි කළා */
       <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="mb-8 text-center">
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-800 dark:text-white">Create Your Portfolio</h2>
@@ -111,45 +176,64 @@ export default function CreatePortfolio() {
           </div>
         )}
 
-        {/* 🔴 මෙතන p-8 sm:p-12 දාලා ඇතුළේ ඉඩ වැඩි කළා, Shadow එකක් දුන්නා */}
         <form onSubmit={handleGoToPreview} className="space-y-10 bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-slate-200 dark:border-slate-800 p-6 sm:p-10 lg:p-14">
 
-          {/* ── Basic Information ── */}
           <section className="space-y-6">
             <SectionHeading>Basic Information</SectionHeading>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField label="Username" required>
-                <input type="text" name="username" value={formData.username} onChange={handleChange} placeholder="e.g. john-doe" className={inputClass} />
+                <input 
+                  type="text" 
+                  name="username" 
+                  value={formData.username} 
+                  onChange={handleChange} 
+                  onBlur={handleUsernameCheck} 
+                  placeholder="e.g. john-doe" 
+                  className={`${inputClass} ${usernameError ? 'border-red-500 ring-1 ring-red-500' : ''}`} 
+                />
+                {usernameError && (
+                  <p className="text-xs text-red-500 mt-1 font-semibold">{usernameError}</p>
+                )}
               </FormField>
+
               <FormField label="Full Name" required>
                 <input type="text" name="fullName" value={formData.fullName} onChange={handleChange} placeholder="e.g. John Doe" className={inputClass} />
               </FormField>
             </div>
-            <FormField label="Professional Title">
-              <input type="text" name="title" value={formData.title} onChange={handleChange} placeholder="e.g. Full Stack Developer" className={inputClass} />
-            </FormField>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField label="Professional Title">
+                <input type="text" name="title" value={formData.title} onChange={handleChange} placeholder="e.g. Full Stack Developer" className={inputClass} />
+              </FormField>
+              <FormField label="Profile Picture URL">
+                <input type="url" name="profileImage" value={formData.profileImage} onChange={handleChange} placeholder="https://example.com/my-photo.jpg" className={inputClass} />
+              </FormField>
+            </div>
+
             <FormField label="Bio">
               <textarea name="bio" value={formData.bio} onChange={handleChange} rows={5} placeholder="Tell the world about yourself..." className={textareaClass} />
             </FormField>
           </section>
 
-          {/* ── Contact Information ── */}
           <section className="space-y-6">
             <SectionHeading>Contact Information</SectionHeading>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <FormField label="Email">
                 <input type="email" name="email" value={formData.contact.email} onChange={handleChange} placeholder="you@example.com" className={inputClass} />
               </FormField>
               <FormField label="LinkedIn URL">
-                <input type="text" name="linkedin" value={formData.contact.linkedin} onChange={handleChange} placeholder="https://linkedin.com/in/..." className={inputClass} />
+                <input type="text" name="linkedin" value={formData.contact.linkedin} onChange={handleChange} placeholder="https://linkedin.com/..." className={inputClass} />
               </FormField>
               <FormField label="GitHub URL">
                 <input type="text" name="github" value={formData.contact.github} onChange={handleChange} placeholder="https://github.com/..." className={inputClass} />
               </FormField>
+              {/* ADDED: Personal Website */}
+              <FormField label="Personal Website">
+                <input type="url" name="website" value={formData.contact.website} onChange={handleChange} placeholder="https://yourwebsite.com" className={inputClass} />
+              </FormField>
             </div>
           </section>
 
-          {/* ── Technical Skills ── */}
           <section className="space-y-6">
             <SectionHeading>Technical Skills</SectionHeading>
             <div className="flex flex-col sm:flex-row gap-3">
@@ -170,7 +254,29 @@ export default function CreatePortfolio() {
             )}
           </section>
 
-          {/* ── Projects ── */}
+          {/* ADDED: Experience Section */}
+          <section className="space-y-6">
+            <SectionHeading>Experience</SectionHeading>
+            <div className="space-y-6">
+              {formData.experience.map((exp, i) => (
+                <div key={i} className="relative p-6 sm:p-8 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl space-y-4 transition-all hover:border-blue-300 dark:hover:border-blue-700">
+                  <button type="button" onClick={() => handleRemoveExperience(i)} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-red-100 hover:bg-red-500 text-red-600 hover:text-white dark:bg-red-900/30 dark:hover:bg-red-500 rounded-full text-lg font-bold transition-colors">×</button>
+                  <p className="text-sm font-bold uppercase tracking-widest text-blue-500">Experience #{i + 1}</p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input type="text" name="role" value={exp.role} onChange={(e) => handleExperienceChange(i, e)} placeholder="Job Title (e.g. Frontend Developer)" className={inputClass} />
+                    <input type="text" name="company" value={exp.company} onChange={(e) => handleExperienceChange(i, e)} placeholder="Company Name" className={inputClass} />
+                  </div>
+                  <input type="text" name="duration" value={exp.duration} onChange={(e) => handleExperienceChange(i, e)} placeholder="Duration (e.g. Jan 2022 - Present)" className={inputClass} />
+                  <textarea name="description" value={exp.description} onChange={(e) => handleExperienceChange(i, e)} placeholder="Job description..." className={textareaClass} rows={3} />
+                </div>
+              ))}
+            </div>
+            <button onClick={handleAddExperience} className="w-full py-4 border-2 border-dashed border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-blue-500 hover:text-blue-500 rounded-2xl text-sm font-bold transition-colors bg-slate-50 dark:bg-slate-800/30 hover:bg-blue-50 dark:hover:bg-blue-900/20">
+              + Add Experience
+            </button>
+          </section>
+
           <section className="space-y-6">
             <SectionHeading>Projects</SectionHeading>
             <div className="space-y-6">
@@ -196,7 +302,6 @@ export default function CreatePortfolio() {
             </button>
           </section>
 
-          {/* ── Preview CTA ── */}
           <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
             <button type="submit" className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-xl text-lg shadow-xl shadow-blue-500/30 hover:-translate-y-1 transition-all duration-300">
               Preview Portfolio →
@@ -207,9 +312,7 @@ export default function CreatePortfolio() {
     );
   }
 
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // STEP 2 — Preview before publish
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // Preview Step
   if (step === 2) {
     return (
       <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-12">
@@ -218,19 +321,36 @@ export default function CreatePortfolio() {
           <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm">Review your details before publishing. Looks great? Hit publish!</p>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 border-2 border-dashed border-blue-400 dark:border-blue-600 rounded-3xl p-8 sm:p-12 shadow-lg space-y-8">
-          <div>
-            <h3 className="text-3xl font-extrabold text-slate-800 dark:text-white">
-              {formData.fullName} <span className="text-lg font-normal text-slate-400">(@{formData.username})</span>
-            </h3>
-            {formData.title && <p className="text-blue-500 font-bold mt-2 text-lg">{formData.title}</p>}
-            {formData.bio && <p className="text-slate-600 dark:text-slate-300 mt-4 text-base leading-relaxed">{formData.bio}</p>}
+        {errorMsg && (
+          <div className="flex items-center justify-center gap-3 bg-red-50 dark:bg-red-900/30 border border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg mb-6 text-sm font-semibold max-w-3xl mx-auto">
+            <span>⚠️</span> {errorMsg}
           </div>
+        )}
+
+        <div className="bg-white dark:bg-slate-900 border-2 border-dashed border-blue-400 dark:border-blue-600 rounded-3xl p-8 sm:p-12 shadow-lg space-y-8">
+          
+          <div className="flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left">
+            {formData.profileImage && (
+              <img src={formData.profileImage} alt="Profile" className="w-24 h-24 rounded-full object-cover border-4 border-blue-100 dark:border-gray-800 shadow-md" onError={(e) => { e.target.style.display = 'none' }} />
+            )}
+            <div>
+              <h3 className="text-3xl font-extrabold text-slate-800 dark:text-white">
+                {formData.fullName} <span className="text-lg font-normal text-slate-400">(@{formData.username})</span>
+              </h3>
+              {formData.title && <p className="text-blue-500 font-bold mt-2 text-lg">{formData.title}</p>}
+            </div>
+          </div>
+          
+          {formData.bio && <p className="text-slate-600 dark:text-slate-300 mt-4 text-base leading-relaxed">{formData.bio}</p>}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Contact Info</p>
-              {formData.contact.email ? <p className="text-sm text-slate-700 dark:text-slate-300 font-medium">{formData.contact.email}</p> : <p className="text-sm text-slate-400">Not provided</p>}
+              <div className="space-y-1">
+                {formData.contact.email && <p className="text-sm text-slate-700 dark:text-slate-300 font-medium">{formData.contact.email}</p>}
+                {formData.contact.website && <p className="text-sm text-slate-700 dark:text-slate-300 font-medium">{formData.contact.website}</p>}
+                {!formData.contact.email && !formData.contact.website && <p className="text-sm text-slate-400">Not provided</p>}
+              </div>
             </div>
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Skills</p>
@@ -239,6 +359,21 @@ export default function CreatePortfolio() {
               </div>
             </div>
           </div>
+
+          {/* ADDED: Experience Preview */}
+          {formData.experience.length > 0 && (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Experience ({formData.experience.length})</p>
+              <div className="space-y-4">
+                {formData.experience.map((exp, i) => (
+                  <div key={i} className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700">
+                    <p className="font-bold text-slate-800 dark:text-white">{exp.role} <span className="text-slate-400 font-normal">at {exp.company}</span></p>
+                    <p className="text-xs text-blue-500 font-mono mt-1">{exp.duration}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Projects ({formData.projects.length})</p>

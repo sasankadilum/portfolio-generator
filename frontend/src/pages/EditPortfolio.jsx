@@ -1,5 +1,4 @@
-// EditPortfolio.jsx — Edit and delete an existing portfolio.
-// All Axios calls (GET, PUT, DELETE) and state management are preserved.
+// EditPortfolio.jsx
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -13,33 +12,43 @@ export default function EditPortfolio() {
   const [loading, setLoading]           = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  // Main form state — pre-populated from the backend
+  // ADDED: website in contact, and experience array
   const [formData, setFormData] = useState({
     username: '',
     fullName: '',
     title:    '',
     bio:      '',
-    contact:  { email: '', linkedin: '', github: '' },
+    profileImage: '', 
+    contact:  { email: '', linkedin: '', github: '', website: '' },
     skills:   [],
     projects: [],
+    experience: [],
   });
 
   const [skillInput, setSkillInput] = useState('');
 
-  // ── Fetch existing portfolio data on mount ────────────────────────────────
   useEffect(() => {
     const fetchPortfolioData = async () => {
       try {
         const response = await axios.get(`http://localhost:5000/api/portfolio/${username}`);
         const data = response.data;
 
-        // Convert techStack arrays → comma-separated strings for the text inputs
         const formattedProjects = data.projects.map((proj) => ({
           ...proj,
           techStack: proj.techStack ? proj.techStack.join(', ') : '',
         }));
 
-        setFormData({ ...data, projects: formattedProjects });
+        setFormData({ 
+          ...data, 
+          projects: formattedProjects,
+          experience: data.experience || [],
+          contact: { 
+            email: data.contact?.email || '', 
+            linkedin: data.contact?.linkedin || '', 
+            github: data.contact?.github || '', 
+            website: data.contact?.website || '' 
+          }
+        });
       } catch (error) {
         console.error('Error fetching portfolio for edit:', error);
         alert('Could not load portfolio data.');
@@ -50,17 +59,21 @@ export default function EditPortfolio() {
     fetchPortfolioData();
   }, [username]);
 
-  // ── Generic field / contact handler ──────────────────────────────────────
-  const handleChange = (e) => {
+ const handleChange = (e) => {
     const { name, value } = e.target;
-    if (['email', 'linkedin', 'github'].includes(name)) {
+    
+    if (name === 'username') {
+      setUsernameError('');
+      setErrorMsg('');
+    }
+
+    if (['email', 'linkedin', 'github', 'website'].includes(name)) {
       setFormData({ ...formData, contact: { ...formData.contact, [name]: value } });
     } else {
       setFormData({ ...formData, [name]: value });
     }
   };
 
-  // ── Skills ────────────────────────────────────────────────────────────────
   const handleAddSkill = (e) => {
     e.preventDefault();
     if (skillInput.trim()) {
@@ -72,7 +85,26 @@ export default function EditPortfolio() {
   const handleRemoveSkill = (i) =>
     setFormData({ ...formData, skills: formData.skills.filter((_, idx) => idx !== i) });
 
-  // ── Projects ──────────────────────────────────────────────────────────────
+  // ── Experience Handlers ───────────────────────────────────────────────────
+  const handleAddExperience = (e) => {
+    e.preventDefault();
+    setFormData({
+      ...formData,
+      experience: [...formData.experience, { company: '', role: '', duration: '', description: '' }],
+    });
+  };
+
+  const handleExperienceChange = (index, e) => {
+    const { name, value } = e.target;
+    const updated = [...formData.experience];
+    updated[index][name] = value;
+    setFormData({ ...formData, experience: updated });
+  };
+
+  const handleRemoveExperience = (i) =>
+    setFormData({ ...formData, experience: formData.experience.filter((_, idx) => idx !== i) });
+
+  // ── Project Handlers ──────────────────────────────────────────────────────
   const handleAddProject = (e) => {
     e.preventDefault();
     setFormData({
@@ -91,7 +123,6 @@ export default function EditPortfolio() {
   const handleRemoveProject = (i) =>
     setFormData({ ...formData, projects: formData.projects.filter((_, idx) => idx !== i) });
 
-  // ── PUT — update portfolio ────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -111,14 +142,14 @@ export default function EditPortfolio() {
       });
 
       alert('Portfolio updated successfully!');
-      navigate(`/portfolio/${formData.username}`);
+      window.open(`/portfolio/${formData.username}`, '_blank');
+      navigate('/dashboard');
     } catch (error) {
       console.error('Error updating portfolio:', error);
       alert(error.response?.data?.message || 'Failed to update portfolio.');
     }
   };
 
-  // ── DELETE — remove portfolio ─────────────────────────────────────────────
   const handleDelete = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -136,7 +167,6 @@ export default function EditPortfolio() {
     }
   };
 
-  // ── Loading state ─────────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -150,7 +180,6 @@ export default function EditPortfolio() {
 
   return (
     <>
-      {/* ── Confirmation modal ─────────────────────────────────────────────── */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm px-4 transition-all">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 max-w-md w-full shadow-2xl text-center">
@@ -162,24 +191,13 @@ export default function EditPortfolio() {
               This action is <strong className="text-red-500">permanent</strong> and cannot be undone. All your projects, skills, and data will be lost.
             </p>
             <div className="flex gap-4">
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="flex-1 py-3.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-xl text-sm transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                className="flex-1 py-3.5 bg-red-500 hover:bg-red-600 text-white font-extrabold rounded-xl text-sm transition-colors shadow-lg shadow-red-500/30 hover:-translate-y-0.5"
-              >
-                Yes, Delete
-              </button>
+              <button onClick={() => setShowDeleteModal(false)} className="flex-1 py-3.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-xl text-sm transition-colors">Cancel</button>
+              <button onClick={handleDelete} className="flex-1 py-3.5 bg-red-500 hover:bg-red-600 text-white font-extrabold rounded-xl text-sm transition-colors shadow-lg shadow-red-500/30 hover:-translate-y-0.5">Yes, Delete</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ── Main edit form ─────────────────────────────────────────────────── */}
       <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="mb-8 text-center">
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-800 dark:text-white">Edit Portfolio</h2>
@@ -188,7 +206,6 @@ export default function EditPortfolio() {
 
         <form onSubmit={handleSubmit} className="space-y-10 bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-slate-200 dark:border-slate-800 p-6 sm:p-10 lg:p-14">
 
-          {/* ── Basic Information ── */}
           <section className="space-y-6">
             <SectionHeading>Basic Information</SectionHeading>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -199,18 +216,24 @@ export default function EditPortfolio() {
                 <input type="text" name="fullName" value={formData.fullName} onChange={handleChange} required className={inputClass} />
               </FormField>
             </div>
-            <FormField label="Professional Title">
-              <input type="text" name="title" value={formData.title} onChange={handleChange} className={inputClass} />
-            </FormField>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField label="Professional Title">
+                <input type="text" name="title" value={formData.title} onChange={handleChange} className={inputClass} />
+              </FormField>
+              <FormField label="Profile Picture URL">
+                <input type="url" name="profileImage" value={formData.profileImage || ''} onChange={handleChange} placeholder="https://example.com/my-photo.jpg" className={inputClass} />
+              </FormField>
+            </div>
+
             <FormField label="Bio">
               <textarea name="bio" value={formData.bio} onChange={handleChange} rows={5} className={textareaClass} />
             </FormField>
           </section>
 
-          {/* ── Contact Information ── */}
           <section className="space-y-6">
             <SectionHeading>Contact Information</SectionHeading>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <FormField label="Email">
                 <input type="email" name="email" value={formData.contact.email} onChange={handleChange} className={inputClass} />
               </FormField>
@@ -220,23 +243,18 @@ export default function EditPortfolio() {
               <FormField label="GitHub URL">
                 <input type="text" name="github" value={formData.contact.github} onChange={handleChange} className={inputClass} />
               </FormField>
+              {/* ADDED: Personal Website */}
+              <FormField label="Personal Website">
+                <input type="url" name="website" value={formData.contact.website} onChange={handleChange} className={inputClass} />
+              </FormField>
             </div>
           </section>
 
-          {/* ── Technical Skills ── */}
           <section className="space-y-6">
             <SectionHeading>Technical Skills</SectionHeading>
             <div className="flex flex-col sm:flex-row gap-3">
-              <input
-                type="text"
-                value={skillInput}
-                onChange={(e) => setSkillInput(e.target.value)}
-                placeholder="Add a skill..."
-                className={inputClass + ' flex-1'}
-              />
-              <button onClick={handleAddSkill} className="px-8 py-3 bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold rounded-xl transition-colors shrink-0">
-                Add Skill
-              </button>
+              <input type="text" value={skillInput} onChange={(e) => setSkillInput(e.target.value)} placeholder="Add a skill..." className={inputClass + ' flex-1'} />
+              <button onClick={handleAddSkill} className="px-8 py-3 bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold rounded-xl transition-colors shrink-0">Add Skill</button>
             </div>
             {formData.skills.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-4">
@@ -250,17 +268,35 @@ export default function EditPortfolio() {
             )}
           </section>
 
-          {/* ── Projects ── */}
+          {/* ADDED: Experience Section */}
+          <section className="space-y-6">
+            <SectionHeading>Experience</SectionHeading>
+            <div className="space-y-6">
+              {formData.experience && formData.experience.map((exp, i) => (
+                <div key={i} className="relative p-6 sm:p-8 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl space-y-4 transition-all hover:border-blue-300 dark:hover:border-blue-700">
+                  <button type="button" onClick={() => handleRemoveExperience(i)} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-red-100 hover:bg-red-500 text-red-600 hover:text-white dark:bg-red-900/30 dark:hover:bg-red-500 rounded-full text-lg font-bold transition-colors">×</button>
+                  <p className="text-sm font-bold uppercase tracking-widest text-blue-500">Experience #{i + 1}</p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input type="text" name="role" value={exp.role} onChange={(e) => handleExperienceChange(i, e)} placeholder="Job Title" className={inputClass} />
+                    <input type="text" name="company" value={exp.company} onChange={(e) => handleExperienceChange(i, e)} placeholder="Company Name" className={inputClass} />
+                  </div>
+                  <input type="text" name="duration" value={exp.duration} onChange={(e) => handleExperienceChange(i, e)} placeholder="Duration" className={inputClass} />
+                  <textarea name="description" value={exp.description} onChange={(e) => handleExperienceChange(i, e)} placeholder="Job description..." className={textareaClass} rows={3} />
+                </div>
+              ))}
+            </div>
+            <button onClick={handleAddExperience} className="w-full py-4 border-2 border-dashed border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-blue-500 hover:text-blue-500 rounded-2xl text-sm font-bold transition-colors bg-slate-50 dark:bg-slate-800/30 hover:bg-blue-50 dark:hover:bg-blue-900/20">
+              + Add Experience
+            </button>
+          </section>
+
           <section className="space-y-6">
             <SectionHeading>Projects</SectionHeading>
             <div className="space-y-6">
               {formData.projects.map((project, i) => (
                 <div key={i} className="relative p-6 sm:p-8 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl space-y-4 transition-all hover:border-blue-300 dark:hover:border-blue-700">
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveProject(i)}
-                    className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-red-100 hover:bg-red-500 text-red-600 hover:text-white dark:bg-red-900/30 dark:hover:bg-red-500 rounded-full text-lg font-bold transition-colors"
-                  >×</button>
+                  <button type="button" onClick={() => handleRemoveProject(i)} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-red-100 hover:bg-red-500 text-red-600 hover:text-white dark:bg-red-900/30 dark:hover:bg-red-500 rounded-full text-lg font-bold transition-colors">×</button>
                   <p className="text-sm font-bold uppercase tracking-widest text-blue-500">Project #{i + 1}</p>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -280,21 +316,9 @@ export default function EditPortfolio() {
             </button>
           </section>
 
-          {/* ── Action Buttons ── */}
           <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-slate-100 dark:border-slate-800">
-            <button
-              type="submit"
-              className="flex-[2] py-4 bg-amber-400 hover:bg-amber-500 text-slate-900 font-extrabold rounded-xl text-base shadow-lg shadow-amber-400/20 hover:-translate-y-0.5 transition-all duration-300"
-            >
-              Save Changes ✓
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowDeleteModal(true)}
-              className="flex-[1] py-4 bg-red-50 hover:bg-red-500 text-red-600 hover:text-white dark:bg-red-900/20 dark:hover:bg-red-600 dark:text-red-400 dark:hover:text-white border border-red-200 dark:border-red-800 hover:border-transparent font-extrabold rounded-xl text-base transition-all duration-300"
-            >
-              Delete Portfolio
-            </button>
+            <button type="submit" className="flex-[2] py-4 bg-amber-400 hover:bg-amber-500 text-slate-900 font-extrabold rounded-xl text-base shadow-lg shadow-amber-400/20 hover:-translate-y-0.5 transition-all duration-300">Save Changes ✓</button>
+            <button type="button" onClick={() => setShowDeleteModal(true)} className="flex-[1] py-4 bg-red-50 hover:bg-red-500 text-red-600 hover:text-white dark:bg-red-900/20 dark:hover:bg-red-600 dark:text-red-400 dark:hover:text-white border border-red-200 dark:border-red-800 hover:border-transparent font-extrabold rounded-xl text-base transition-all duration-300">Delete Portfolio</button>
           </div>
         </form>
       </div>

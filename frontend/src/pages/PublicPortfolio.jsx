@@ -1,18 +1,14 @@
-// PublicPortfolio.jsx — Public-facing portfolio page.
-// Has its own sticky nav (smooth scrolling). The app Navbar is hidden on this route.
-// All data-fetching logic and the edit-button check are preserved.
+// PublicPortfolio.jsx
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 
-// ── Section heading with animated underline ───────────────────────────────────
 const SectionTitle = ({ children }) => (
   <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-800 dark:text-white mb-8 relative inline-block after:block after:h-1 after:w-12 after:bg-blue-500 after:mt-2 after:rounded-full">
     {children}
   </h2>
 );
 
-// ── Tech badge ────────────────────────────────────────────────────────────────
 const TechBadge = ({ tech }) => (
   <span className="px-3 py-1 text-xs font-semibold bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 border border-blue-200 dark:border-blue-800 rounded-md">
     {tech}
@@ -24,10 +20,8 @@ export default function PublicPortfolio() {
   const [portfolio, setPortfolio] = useState(null);
   const [loading, setLoading]     = useState(true);
 
-  // Show edit button only when a JWT token exists (i.e., user is logged in)
   const isLoggedIn = !!localStorage.getItem('token');
 
-  // ── Fetch portfolio by username ───────────────────────────────────────────
   useEffect(() => {
     const fetchPortfolio = async () => {
       try {
@@ -42,12 +36,10 @@ export default function PublicPortfolio() {
     fetchPortfolio();
   }, [username]);
 
-  // ── Function to trigger PDF Download (Native Print) ────────────────────────
   const handleDownloadPDF = () => {
     window.print();
   };
 
-  // ── Loading spinner ───────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-white dark:bg-gray-950">
@@ -59,7 +51,6 @@ export default function PublicPortfolio() {
     );
   }
 
-  // ── Not found state ───────────────────────────────────────────────────────
   if (!portfolio) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-white dark:bg-gray-950 gap-4">
@@ -73,10 +64,12 @@ export default function PublicPortfolio() {
     );
   }
 
+  // ADDED: Include 'experience' in the navigation menu
+  const navSections = ['home', 'about', 'experience', 'skills', 'projects', 'contact'];
+
   return (
     <div className="bg-white dark:bg-gray-950 min-h-screen transition-colors duration-300">
 
-      {/* ── Edit bar (only for logged-in users) - Hidden when printing ── */}
       {isLoggedIn && (
         <div className="bg-slate-800 dark:bg-gray-900 px-6 py-2.5 flex justify-end border-b border-slate-700 print:hidden">
           <Link
@@ -88,14 +81,13 @@ export default function PublicPortfolio() {
         </div>
       )}
 
-      {/* ── Own sticky nav for this portfolio page - Hidden when printing ── */}
       <nav className="sticky top-0 z-40 bg-white/95 dark:bg-gray-900/95 backdrop-blur border-b border-slate-100 dark:border-gray-800 shadow-sm print:hidden">
-        <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-center gap-6 sm:gap-10">
-          {['home', 'about', 'skills', 'projects', 'contact'].map((section) => (
+        <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-center gap-4 sm:gap-10 overflow-x-auto">
+          {navSections.map((section) => (
             <a
               key={section}
               href={`#${section}`}
-              className="text-sm font-semibold capitalize text-slate-500 dark:text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
+              className="text-sm font-semibold capitalize whitespace-nowrap text-slate-500 dark:text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
             >
               {section}
             </a>
@@ -105,11 +97,19 @@ export default function PublicPortfolio() {
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 pb-24">
 
-        {/* ── Hero / Header ── */}
-        <header
-          id="home"
-          className="text-center py-24 sm:py-32 border-b border-slate-100 dark:border-gray-800"
-        >
+        <header id="home" className="text-center py-20 sm:py-28 border-b border-slate-100 dark:border-gray-800">
+          
+          {portfolio.profileImage && (
+            <div className="mb-8">
+              <img 
+                src={portfolio.profileImage} 
+                alt={portfolio.fullName} 
+                className="w-32 h-32 md:w-40 md:h-40 rounded-full object-cover mx-auto border-4 border-blue-50 dark:border-gray-800 shadow-xl"
+                onError={(e) => { e.target.style.display = 'none'; }} 
+              />
+            </div>
+          )}
+
           <div className="inline-flex items-center gap-2 px-4 py-1.5 mb-6 rounded-full bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800">
             <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
             <span className="text-xs font-bold text-blue-600 dark:text-blue-300 tracking-wide">Available for work</span>
@@ -121,7 +121,6 @@ export default function PublicPortfolio() {
             {portfolio.title}
           </p>
 
-          {/* 🔴 NEW: Download PDF Button (Hidden when printing) */}
           <div className="mt-8 flex justify-center print:hidden">
             <button 
               onClick={handleDownloadPDF}
@@ -132,7 +131,6 @@ export default function PublicPortfolio() {
           </div>
         </header>
 
-        {/* ── About ── */}
         <section id="about" className="py-20 border-b border-slate-100 dark:border-gray-800 scroll-mt-14">
           <SectionTitle>About Me</SectionTitle>
           <p className="text-base sm:text-lg text-slate-600 dark:text-slate-400 leading-relaxed max-w-2xl">
@@ -140,7 +138,23 @@ export default function PublicPortfolio() {
           </p>
         </section>
 
-        {/* ── Skills ── */}
+        {/* ADDED: Experience Section Rendering */}
+        {portfolio.experience && portfolio.experience.length > 0 && (
+          <section id="experience" className="py-20 border-b border-slate-100 dark:border-gray-800 scroll-mt-14">
+            <SectionTitle>Work Experience</SectionTitle>
+            <div className="space-y-8">
+              {portfolio.experience.map((exp, i) => (
+                <div key={i} className="relative pl-6 sm:pl-8 border-l-2 border-blue-200 dark:border-blue-900/50">
+                  <div className="absolute w-4 h-4 bg-blue-500 rounded-full -left-[9px] top-1 ring-4 ring-white dark:ring-gray-950" />
+                  <h3 className="text-xl font-bold text-slate-800 dark:text-white">{exp.role}</h3>
+                  <p className="text-blue-500 font-semibold text-sm mb-2">{exp.company} <span className="text-slate-400 mx-2">|</span> {exp.duration}</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{exp.description}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
         <section id="skills" className="py-20 border-b border-slate-100 dark:border-gray-800 scroll-mt-14">
           <SectionTitle>Technical Skills</SectionTitle>
           <div className="flex flex-wrap gap-3">
@@ -155,7 +169,6 @@ export default function PublicPortfolio() {
           </div>
         </section>
 
-        {/* ── Projects ── */}
         <section id="projects" className="py-20 border-b border-slate-100 dark:border-gray-800 scroll-mt-14">
           <SectionTitle>Featured Projects</SectionTitle>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -170,36 +183,23 @@ export default function PublicPortfolio() {
                 <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-4 flex-1">
                   {project.description}
                 </p>
-                {/* Tech stack badges */}
                 <div className="flex flex-wrap gap-2 mb-5">
                   {project.techStack.map((tech, ti) => (
                     <TechBadge key={ti} tech={tech} />
                   ))}
                 </div>
-                {/* Project links - Hidden when printing since you can't click paper */}
                 <div className="flex gap-3 mt-auto print:hidden">
                   {project.githubLink && (
-                    <a
-                      href={project.githubLink}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex-1 text-center py-2 bg-slate-800 hover:bg-slate-700 dark:bg-gray-800 dark:hover:bg-gray-700 text-white text-xs font-bold rounded-lg transition-colors"
-                    >
+                    <a href={project.githubLink} target="_blank" rel="noreferrer" className="flex-1 text-center py-2 bg-slate-800 hover:bg-slate-700 dark:bg-gray-800 dark:hover:bg-gray-700 text-white text-xs font-bold rounded-lg transition-colors">
                       GitHub →
                     </a>
                   )}
                   {project.liveDemo && (
-                    <a
-                      href={project.liveDemo}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex-1 text-center py-2 bg-green-500 hover:bg-green-600 text-white text-xs font-bold rounded-lg transition-colors"
-                    >
+                    <a href={project.liveDemo} target="_blank" rel="noreferrer" className="flex-1 text-center py-2 bg-green-500 hover:bg-green-600 text-white text-xs font-bold rounded-lg transition-colors">
                       Live Demo →
                     </a>
                   )}
                 </div>
-                {/* Print-only fallback for links */}
                 <div className="hidden print:block text-xs text-blue-500 mt-2">
                   {project.githubLink && <p>GitHub: {project.githubLink}</p>}
                   {project.liveDemo && <p>Live: {project.liveDemo}</p>}
@@ -209,7 +209,6 @@ export default function PublicPortfolio() {
           </div>
         </section>
 
-        {/* ── Contact ── */}
         <section id="contact" className="py-20 scroll-mt-14">
           <SectionTitle>Let's Connect</SectionTitle>
           <div className="bg-gradient-to-br from-slate-800 to-slate-900 dark:from-gray-900 dark:to-gray-950 border border-slate-700 dark:border-gray-800 rounded-2xl p-10 text-center shadow-xl print:shadow-none print:border-none">
@@ -224,38 +223,28 @@ export default function PublicPortfolio() {
             )}
             <div className="flex justify-center gap-4 flex-wrap print:hidden">
               {portfolio.contact.linkedin && (
-                <a
-                  href={portfolio.contact.linkedin}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm transition-colors"
-                >
-                  LinkedIn
-                </a>
+                <a href={portfolio.contact.linkedin} target="_blank" rel="noreferrer" className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm transition-colors">LinkedIn</a>
               )}
               {portfolio.contact.github && (
-                <a
-                  href={portfolio.contact.github}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-6 py-3 bg-slate-600 hover:bg-slate-500 text-white font-bold rounded-xl text-sm transition-colors"
-                >
-                  GitHub
-                </a>
+                <a href={portfolio.contact.github} target="_blank" rel="noreferrer" className="px-6 py-3 bg-slate-600 hover:bg-slate-500 text-white font-bold rounded-xl text-sm transition-colors">GitHub</a>
+              )}
+              {/* ADDED: Personal Website Button */}
+              {portfolio.contact.website && (
+                <a href={portfolio.contact.website} target="_blank" rel="noreferrer" className="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-sm transition-colors">Website</a>
               )}
             </div>
             
-            {/* Print-only fallback for contact links */}
             <div className="hidden print:block text-sm text-slate-800 text-left space-y-2 mt-4">
               {portfolio.contact.linkedin && <p><strong>LinkedIn:</strong> {portfolio.contact.linkedin}</p>}
               {portfolio.contact.github && <p><strong>GitHub:</strong> {portfolio.contact.github}</p>}
+              {/* ADDED: Personal Website Print */}
+              {portfolio.contact.website && <p><strong>Website:</strong> {portfolio.contact.website}</p>}
             </div>
           </div>
         </section>
 
       </div>
 
-      {/* ── Page footer - Hidden when printing ── */}
       <footer className="py-6 text-center border-t border-slate-100 dark:border-gray-800 text-xs text-slate-400 print:hidden">
         Portfolio powered by <span className="text-blue-500 font-semibold">PortGen</span>
       </footer>

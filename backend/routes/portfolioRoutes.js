@@ -5,7 +5,8 @@ const {
   getPortfolioByUsername, 
   updatePortfolio,
   deletePortfolio,
-  getMyPortfolio 
+  getMyPortfolio,
+  checkUsernameExists 
 } = require('../controllers/portfolioController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -24,4 +25,5 @@ router.put('/:username', protect, updatePortfolio);
 // DELETE /api/portfolio/:username - Delete a portfolio (Protected)
 router.delete('/:username', protect, deletePortfolio);
 
+router.get('/check-username/:username', checkUsernameExists);
 module.exports = router;
